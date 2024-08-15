@@ -15,36 +15,83 @@ namespace MyWebAPI.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure relationships, constraints, and additional settings if needed
+            // Configure relationships user-all tables
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Accounts)
                 .WithOne(a => a.User)
-                .HasForeignKey(a => a.UserId);
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevents cascade delete
 
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Transactions)
                 .WithOne(t => t.User)
-                .HasForeignKey(t => t.UserId);
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Budgets)
+                .WithOne(b => b.User)
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Categories)
+                .WithOne(c => c.User)
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //user done
+
+            //Account-Transaction
             modelBuilder.Entity<Account>()
                 .HasMany(a => a.Transactions)
                 .WithOne(t => t.Account)
-                .HasForeignKey(t => t.AccountId);
+                .HasForeignKey(t => t.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            //Account - Transaction done
 
-            modelBuilder.Entity<Category>()
-                .HasMany(c => c.Transactions)
-                .WithOne(t => t.Category)
-                .HasForeignKey(t => t.CategoryId);
+            //Category - Budget
+             modelBuilder.Entity<Category>()
+                .HasMany(c => c.Budgets)
+                .WithOne(b => b.Category)
+                .HasForeignKey(b => b.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            //Category - Budget Done
 
+            //Transaction - Account
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Account)
+                .WithMany(a => a.Transactions)
+                .HasForeignKey(t => t.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //Trnsaction - User
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.User)
+                .WithMany(u => u.Transactions)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //Transaction - Category
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Category)
+                .WithMany(c => c.Transactions)
+                .HasForeignKey(t => t.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Budget - User
+            // modelBuilder.Entity<Budget>()
+            //     .HasOne(b => b.User)
+            //     .WithMany(u => u.Budgets)
+            //     .HasForeignKey(b => b.UserId)
+            //     .OnDelete(DeleteBehavior.Restrict);
+
+            //Budget - Category
             modelBuilder.Entity<Budget>()
                 .HasOne(b => b.Category)
                 .WithMany(c => c.Budgets)
-                .HasForeignKey(b => b.CategoryId);
-
-            modelBuilder.Entity<Budget>()
-                .HasOne(b => b.User)
-                .WithMany(u => u.Budgets)
-                .HasForeignKey(b => b.UserId);
+                .HasForeignKey(b => b.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
