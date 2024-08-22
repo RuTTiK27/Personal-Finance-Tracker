@@ -15,6 +15,14 @@ namespace MyWebAPI.Models
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<User>()
+                .Property(u => u.UserId)
+                .ValueGeneratedOnAdd();
+
+            // modelBuilder.Entity<User>()
+            //     .Property(u => u.CreatedDate)
+            //     .HasDefaultValueSql("GETDATE()"); // Correct placement of the Property method
+
             // Configure relationships user-all tables
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Accounts)
@@ -42,6 +50,12 @@ namespace MyWebAPI.Models
 
             //user done
 
+
+            //Account
+            modelBuilder.Entity<Account>()
+                .Property(a => a.AccountId)
+                .ValueGeneratedOnAdd();
+                
             //Account-Transaction
             modelBuilder.Entity<Account>()
                 .HasMany(a => a.Transactions)
@@ -58,12 +72,15 @@ namespace MyWebAPI.Models
                 .OnDelete(DeleteBehavior.Restrict);
             //Category - Budget Done
 
+
+            
             //Transaction - Account
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.Account)
                 .WithMany(a => a.Transactions)
                 .HasForeignKey(t => t.AccountId)
                 .OnDelete(DeleteBehavior.Restrict);
+                
 
             //Trnsaction - User
             modelBuilder.Entity<Transaction>()
