@@ -1,0 +1,49 @@
+<mat-grid-list [cols]="isSmallScreen ? 1 : 2" rowHeight="100%">
+    <mat-grid-tile *ngIf="!isSmallScreen">
+        <img src="/LoginImage.png" alt="" width="90%">
+    </mat-grid-tile>
+
+    <mat-grid-tile >
+
+        <form class="form">
+
+          <div *ngIf="isSmallScreen" style="display: flex;justify-content: center;" >
+            <img src="/Budget Budy.png" width="75%"  />
+          </div>
+
+          <h1 style="font-weight: 400;">Login to your account</h1>
+          <p style="font-weight: 200;">Welcome back</p>
+            <mat-form-field class="full-width">
+                <mat-label>Email</mat-label>
+                <input type="email" matInput [formControl]="emailFormControl" [errorStateMatcher]="matcher"
+                       placeholder="Ex. pat@example.com">
+                <mat-hint>Errors appear instantly!</mat-hint>
+                @if (emailFormControl.hasError('email') && !emailFormControl.hasError('required')) {
+                  <mat-error>Please enter a valid email address</mat-error>
+                }
+                @if (emailFormControl.hasError('required')) {
+                  <mat-error>Email is <strong>required</strong></mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field class="full-width">
+                <mat-label>Password</mat-label>
+                <input type="password" matInput [formControl]="passwordFormControl" [errorStateMatcher]="matcher"
+                       placeholder="Ex. ********">
+                <mat-hint>Errors appear instantly!</mat-hint>
+                
+                @if (passwordFormControl.hasError('required')) {
+                  <mat-error>Passowrd is <strong>required</strong></mat-error>
+                }
+              </mat-form-field>
+              <div class="center-button">
+                <button mat-flat-button class="signin-button">Log in</button>
+              </div>
+            </form>
+          
+            <div class="absolute">
+              Don't Have an account, <span class="link" [routerLink]="'/register'">Sign in</span>
+            </div>
+
+    </mat-grid-tile>
+  </mat-grid-list>
