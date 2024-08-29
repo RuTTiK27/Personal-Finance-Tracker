@@ -3,6 +3,17 @@ using MyWebAPI.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:4200") // Angular app URL
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
 builder.Services.AddDbContext<MyAppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyAppDatabase")));
 
@@ -24,6 +35,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Use CORS policy
+app.UseCors("AllowSpecificOrigin");
 
 app.UseAuthorization();
 

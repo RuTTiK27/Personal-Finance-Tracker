@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MyWebAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Cors;
 
 namespace MyWebAPI.Controllers
 {
@@ -15,6 +16,18 @@ namespace MyWebAPI.Controllers
             _context = context;
         }
 
+        // GET: api/users/reservedusernames
+        [HttpGet("reservedusernames")]
+        [EnableCors("AllowSpecificOrigin")]
+        public async Task<ActionResult<IEnumerable<string>>> GetReservedUsernames()
+        {
+            // Fetch only the 'Username' column from the 'Users' table
+            var reservedUsernames = await _context.Users
+                                                  .Select(u => u.Username)
+                                                  .ToListAsync();
+
+            return Ok(reservedUsernames);
+        }
         //GET: api/users
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()

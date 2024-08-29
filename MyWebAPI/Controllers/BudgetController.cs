@@ -38,7 +38,7 @@ namespace MyWebAPI.Controllers
 
         //POST: api/Budgets
         [HttpPost]
-        public async Task<ActionResult<Budget>> PostBudget([FromBody] BudgetDto budgetDto)
+        public async Task<ActionResult<Budget>> PostBudget(BudgetDto budgetDto)
         {
             // Validate the DTO
             if (!ModelState.IsValid)

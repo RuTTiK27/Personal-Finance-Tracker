@@ -4,7 +4,7 @@
     </mat-grid-tile>
 
     <mat-grid-tile>
-        <form class="form">
+        <form class="form" (ngSubmit)="onSubmit()">
 
           <div *ngIf="isSmallScreen" style="display: flex;justify-content: center;" >
             <img src="/Budget Budy.png" width="75%"  />
@@ -23,6 +23,18 @@
               @if (usernameFormControl.hasError('required')) {
                 <mat-error>Username is <strong>required</strong></mat-error>
               }
+              @if (usernameFormControl.hasError('minlength')) {
+                <mat-error>Username must be at least <strong>3 characters long</strong></mat-error>
+              }
+              @if (usernameFormControl.hasError('maxlength')) {
+                <mat-error>Username must be no more than <strong>20 characters long</strong></mat-error>
+              }
+              @if (usernameFormControl.hasError('pattern')) {
+                <mat-error>Username can only contain letters, numbers, underscores, or hyphens.</mat-error>
+              }
+              @if (usernameFormControl.hasError('reservedUsername')) {
+                <mat-error>This username is <strong>reserved</strong>.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field class="full-width">
@@ -36,6 +48,12 @@
                 @if (emailFormControl.hasError('required')) {
                   <mat-error>Email is <strong>required</strong></mat-error>
                 }
+                @if (emailFormControl.hasError('minlength')) {
+                  <mat-error>Email must be at least <strong>5 characters long</strong></mat-error>
+                }
+                @if (emailFormControl.hasError('maxlength')) {
+                  <mat-error>Email must be no more than <strong>254 characters long</strong></mat-error>
+                }
               </mat-form-field>
 
               <mat-form-field class="full-width">
@@ -47,9 +65,18 @@
                 @if (passwordFormControl.hasError('required')) {
                   <mat-error>Passowrd is <strong>required</strong></mat-error>
                 }
+                @if (passwordFormControl.hasError('minlength')) {
+                  <mat-error>Password must be at least <strong>8 characters long</strong></mat-error>
+                }
+                @if (passwordFormControl.hasError('maxlength')) {
+                  <mat-error>Password must be no more than <strong>128 characters long</strong></mat-error>
+                }
+                @if (passwordFormControl.hasError('pattern')) {
+                  <mat-error>Password must one uppercase & lowercase letter, digit and spacial character.</mat-error>
+                }
               </mat-form-field>
               <div class="center-button">
-                <button mat-flat-button class="signin-button">Sign in</button>
+                <button type="submit" mat-flat-button class="signin-button">Sign in</button>
               </div>
             </form>
           
