@@ -50,6 +50,7 @@ export class RegisterComponent {
 
   isSmallScreen: boolean = false;
   reservedUsernames: string[] = [];
+  reservedEmails: string[] = [];
 
   usernameFormControl = new FormControl('', [Validators.required,
     Validators.minLength(3),
@@ -88,6 +89,17 @@ export class RegisterComponent {
           console.error('Error fetching reserved usernames', error);
         }
       );  
+
+      this.userService.getReservedEmails().subscribe(
+        emails => {
+          this.reservedEmails = emails;
+          this.emailFormControl.addValidators(this.reservedEmailValidator(this.reservedEmails));
+          this.emailFormControl.updateValueAndValidity(); // Make sure to revalidate after adding validators
+        },
+        error => {
+          console.error('Error fetching reserved usernames', error);
+        }
+      );
   }
 
   reservedUsernameValidator(reservedUsernames: string[]): ValidatorFn {
@@ -95,13 +107,40 @@ export class RegisterComponent {
       return reservedUsernames.includes(control.value) ? { reservedUsername: true } : null;
     };
   }
+  
+  reservedEmailValidator(reservedEmails: string[]): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      return reservedEmails.includes(control.value) ? { reservedEmail: true } : null;
+    };
+  }
 
   onSubmit(){
-    if (!this.emailFormControl.errors && !this.usernameFormControl.errors &&  !this.passwordFormControl.errors) {
-      console.warn("submited");
-    }else{
-      console.warn("error there");
-    } 
+    // if (!this.emailFormControl.errors && !this.usernameFormControl.errors &&  !this.passwordFormControl.errors) {
+    //   console.warn("submited");
+    // }else{
+    //   console.warn("error there");
+    // } 
     
+    if (this.usernameFormControl.valid && this.emailFormControl.valid && this.passwordFormControl.valid) {
+      const user = {
+        username: this.usernameFormControl.value,
+        email: this.emailFormControl.value,
+        PasswordHash: this.passwordFormControl.value
+      };
+
+      this.userService.registerUser(user).subscribe(
+        response => {
+          console.log('User registered successfully', response);
+          // Handle successful registration (e.g., redirect to login page or show a success message)
+        },
+        error => {
+          console.error('Error registering user', error);
+          // Handle registration error (e.g., show an error message to the user)
+        }
+      );
+    } else {
+      console.warn("Form contains errors");
+    }
   }
+
 }

@@ -5,7 +5,7 @@
 
     <mat-grid-tile >
 
-        <form class="form">
+        <form class="form" (ngSubmit)="onSubmit()">
 
           <div *ngIf="isSmallScreen" style="display: flex;justify-content: center;" >
             <img src="/Budget Budy.png" width="75%"  />

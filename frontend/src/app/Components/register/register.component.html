@@ -54,6 +54,9 @@
                 @if (emailFormControl.hasError('maxlength')) {
                   <mat-error>Email must be no more than <strong>254 characters long</strong></mat-error>
                 }
+                @if (emailFormControl.hasError('reservedEmail')) {
+                  <mat-error>This email is <strong>registered</strong>.</mat-error>
+                }
               </mat-form-field>
 
               <mat-form-field class="full-width">

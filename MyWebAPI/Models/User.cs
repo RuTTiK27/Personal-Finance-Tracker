@@ -16,9 +16,11 @@ namespace MyWebAPI.Models
         [Required]
         public string PasswordHash { get; set; }
 
-        
         public DateTime CreatedDate {get; set;}
         
+        // New properties for email verification
+        public bool IsEmailConfirmed { get; set; } = false;
+        public string? EmailVerificationToken { get; set; }
         
         public ICollection<Account> Accounts { get; set; } = new HashSet<Account>();
         public ICollection<Transaction> Transactions { get; set; } = new HashSet<Transaction>();
