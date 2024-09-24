@@ -13,7 +13,8 @@ builder.Services.AddCors(options =>
         {
             builder.WithOrigins("http://localhost:4200") // Angular app URL
                    .AllowAnyMethod()
-                   .AllowAnyHeader();
+                   .AllowAnyHeader()
+                   .AllowCredentials(); // Important for cookies
         });
 });
 

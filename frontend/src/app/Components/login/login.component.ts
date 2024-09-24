@@ -6,15 +6,19 @@ import {
   Validators,
   FormsModule,
   ReactiveFormsModule,
+  FormGroup,
+  FormBuilder
 } from '@angular/forms';
 import {ErrorStateMatcher} from '@angular/material/core';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatButtonModule} from '@angular/material/button';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {MatGridListModule} from '@angular/material/grid-list';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../Services/auth.service'; // Create this service
+import { HttpErrorResponse } from '@angular/common/http';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher {
@@ -35,7 +39,6 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
     ReactiveFormsModule,
     MatButtonModule,
     RouterLink,
-    RouterLink,
     CommonModule
   ],
   templateUrl: './login.component.html',
@@ -43,19 +46,37 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
 })
 export class LoginComponent {
   isSmallScreen: boolean = false;
-  constructor(private breakpointObserver: BreakpointObserver) {
+
+  matcher = new MyErrorStateMatcher();
+  errorMessage: string = '';
+  loginForm!: FormGroup;
+
+  constructor(private breakpointObserver: BreakpointObserver,private fb: FormBuilder,private authService: AuthService,private router: Router) {
     this.breakpointObserver.observe([Breakpoints.Small, Breakpoints.XSmall])
       .subscribe(result => {
         this.isSmallScreen = result.matches;
+      })
+      // Properly initialize the FormGroup with validation
+      this.loginForm = this.fb.group({
+        Email: ['', [Validators.required, Validators.email]],
+        Password: ['', Validators.required]
       });
   }
-  
-  emailFormControl = new FormControl('', [Validators.required, Validators.email]);
-  passwordFormControl = new FormControl('', [Validators.required]);
 
-  matcher = new MyErrorStateMatcher();
 
   onSubmit(){
+    if (this.loginForm.valid) {
+      this.authService.login(this.loginForm.value).subscribe(
+        (response: any) => {
+          // Store the token
+          localStorage.setItem('token', response.token);
+          this.router.navigate(['/dashboard']); // Navigate to protected route
+        },
+        (error: HttpErrorResponse) => {
+          this.errorMessage = 'Invalid username or password';
+        }
+      );
+    }
     
   }
 

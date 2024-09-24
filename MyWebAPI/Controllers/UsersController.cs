@@ -9,6 +9,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Mail;
+using Microsoft.AspNetCore.Identity;
 
 namespace MyWebAPI.Controllers
 {
@@ -24,7 +25,8 @@ namespace MyWebAPI.Controllers
             _context = context;
             _configuration = configuration;
         }
-
+        private readonly PasswordHasher<User> _passwordHasher = new PasswordHasher<User>();
+        
         // GET: api/users/reservedusernames
         [HttpGet("reservedusernames")]
         [EnableCors("AllowSpecificOrigin")]
@@ -79,7 +81,7 @@ namespace MyWebAPI.Controllers
         public async Task<ActionResult<User>> PostUser(User user)
         {
             user.CreatedDate = DateTime.Now;
-
+            user.PasswordHash = _passwordHasher.HashPassword(user, user.PasswordHash);
             // Generate JWT Token for verification
             var EmailVerificationToken = GenerateJwtToken(user);
             user.EmailVerificationToken = EmailVerificationToken.ToString();
@@ -161,14 +163,16 @@ namespace MyWebAPI.Controllers
         }
 
         [HttpPost("generateToken")]
-        public string GenerateJwtToken([FromBody] User user)
+        public string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
 
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()), // Adding UserId as a claim
+                new Claim(ClaimTypes.Email, user.Email) // Adding email as a claim
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey));
@@ -183,6 +187,7 @@ namespace MyWebAPI.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
         [HttpPost("sendVerificationEmail")]
         public async Task<ActionResult> SendVerificationEmail(string recipientEmail, string token)
@@ -261,6 +266,30 @@ namespace MyWebAPI.Controllers
             return Ok("Email verified successfully. Visit http://localhost:4200/login");
         }
         
-    }
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] LoginRequest request)
+        {
+            var user = _context.Users.SingleOrDefault(u => u.Email == request.Email);
+            if (user == null)
+                return Unauthorized(new { message = "Invalid email or username" });
 
+            // Verify password
+            var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            if (passwordVerificationResult != PasswordVerificationResult.Success)
+                return Unauthorized(new { message = "Invalid password" });
+
+            // Check if email is confirmed
+            if (!user.IsEmailConfirmed)
+                return BadRequest(new { message = "Email not verified" });
+
+            // Generate JWT token using the existing method
+            var token = GenerateJwtToken(user);
+
+            return Ok(new { Token = token });
+        }
+
+
+
+
+    }
 }
