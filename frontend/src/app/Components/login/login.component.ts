@@ -66,10 +66,10 @@ export class LoginComponent {
 
   onSubmit(){
     if (this.loginForm.valid) {
-      this.authService.login(this.loginForm.value).subscribe(
+      const { Email, Password } = this.loginForm.value;  // Extract username and password
+      this.authService.login(Email, Password).subscribe(
         (response: any) => {
           // Store the token
-          localStorage.setItem('token', response.token);
           this.router.navigate(['/dashboard']); // Navigate to protected route
         },
         (error: HttpErrorResponse) => {

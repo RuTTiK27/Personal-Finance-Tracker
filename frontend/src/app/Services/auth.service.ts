@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
-import { Router } from '@angular/router';
+import { HttpClient,HttpHeaders  } from '@angular/common/http';
+import { catchError, map, Observable,tap, throwError } from 'rxjs';
 import { jwtDecode } from "jwt-decode";
+import { Router } from '@angular/router';
+import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,38 +11,118 @@ import { jwtDecode } from "jwt-decode";
 export class AuthService {
   private apiUrl = 'http://localhost:5021/api/users'; 
 
-  constructor(private http: HttpClient, private router: Router) { }
-
-  login(credentials: any) {
-    return this.http.post<{ token: string }>(`${this.apiUrl}/login`, credentials,{ withCredentials: true }).pipe(
-      tap((response: { token: string; }) => {
-        // Set the cookie here
-        this.setCookie('token', response.token, 1/1440); // Set for 1 day
-      })
-    );
-  }
-
-  private setCookie(name: string, value: string, days: number) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expiresString = `expires=${expires.toUTCString()}`;
-    document.cookie = `${name}=${value}; ${expiresString}; path=/; Secure; SameSite=Strict`; // Ensure cookies are secure and scoped to your site
-  }
+  private accessTokenKey = 'accessToken';
+  private refreshTokenKey = 'refreshToken';
   
-  isAuthenticated(): boolean {
-      const token = localStorage.getItem('token');
-      console.log("token : "+token);
-    if (token) {
-      const decoded: any = jwtDecode(token);
-      const expirationTime = decoded.exp * 1000; // Convert to milliseconds
-      return Date.now() < expirationTime; // Check if the current time is less than the expiration time
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private cookieService: CookieService
+  ) {  }
+  // Log in the user and set the tokens in cookies
+  login(Email:string, Password:string): Observable<any> {
+    
+    return this.http.post(`${this.apiUrl}/login`, { Email, Password })
+      .pipe(
+        tap((response: any) => {
+          this.setAccessToken(response.accessToken);
+          this.setRefreshToken(response.refreshToken);
+        })
+      );
+  }
+// Method to refresh the access token
+refreshAccessToken(): Observable<any> {
+  const refreshToken = this.cookieService.get('refreshToken'); // Get refresh token from cookie
+
+  if (!refreshToken) {
+    return throwError('No refresh token available');
+  }
+
+  return this.http.post(`${this.apiUrl}/refresh-token`, { refreshToken: refreshToken }).pipe(
+    map((response: any) => {
+      this.setAccessToken(response.accessToken);
+      this.setRefreshToken(response.refreshToken);
+      return response.accessToken;
+    }),
+    catchError(error => {
+      this.logout(); // If refresh token is invalid, log out the user
+      return throwError(error);
+    })
+  );
+}
+  // Set the access token in a cookie
+  setAccessToken(token: string) {
+    const decoded: any = jwtDecode(token); // Decode the token to get expiration details
+    const expiresIn = decoded.exp; // Get the expiration time (in seconds)
+
+    // Create a Date object for the expiration date
+    const expiryDate = new Date(expiresIn * 1000); // Convert to milliseconds
+
+    this.cookieService.set('accessToken', token, expiryDate); // Set the access token cookie with expiration
+  }
+
+  // Set the refresh token in a cookie
+  setRefreshToken(token: string) {
+    const expiryDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    this.cookieService.set('refreshToken', token, expiryDate);
+  }
+
+  // Get the access token from cookies
+  getAccessToken(): string | null {
+    return this.cookieService.get(this.accessTokenKey);
+  }
+
+  // Get the refresh token from cookies
+  getRefreshToken(): string | null {
+    return this.cookieService.get(this.refreshTokenKey);
+  }
+
+  // Remove tokens from cookies (logout)
+  clearTokens() {
+    this.cookieService.delete(this.accessTokenKey, '/');
+    this.cookieService.delete(this.refreshTokenKey, '/');
+  }
+
+  // Refresh the access token using the refresh token
+  refreshToken(): Observable<any> {
+    const refreshToken = this.getRefreshToken();
+    if (refreshToken) {
+      return this.http.post(`${this.apiUrl}/refresh-token`, { refreshToken })
+        .pipe(
+          tap((response: any) => {
+            this.setAccessToken(response.accessToken);
+          })
+        );
+    } else {
+      // If no refresh token, log out or handle the situation
+      this.logout();
+      return new Observable(observer => observer.error('No refresh token available'));
     }
-    return false; // No token found
   }
 
+  // Log out the user
   logout() {
-    localStorage.removeItem('token');
-    document.cookie = 'yourCookieName=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    this.clearTokens();
+    this.router.navigate(['/login']);
   }
 
+  // Check if the user is logged in (access token exists and is valid)
+  isLoggedIn(): boolean {
+    const token = this.cookieService.get('accessToken');
+
+    if (!token) {
+      return false;
+    }
+
+    try {
+      return !this.isTokenExpired(token);
+    } catch {
+      return false;
+    }
+  }
+  private isTokenExpired(token: string): boolean {
+    const decoded: any = jwtDecode(token); // Decode the token
+    const currentTime = Date.now() / 1000; // Get current time in seconds
+    return decoded.exp < currentTime; // Check if the token is expired
+  }
 }

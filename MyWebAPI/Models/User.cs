@@ -21,7 +21,9 @@ namespace MyWebAPI.Models
         // New properties for email verification
         public bool IsEmailConfirmed { get; set; } = false;
         public string? EmailVerificationToken { get; set; }
-        
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime{ get; set; }
+
         public ICollection<Account> Accounts { get; set; } = new HashSet<Account>();
         public ICollection<Transaction> Transactions { get; set; } = new HashSet<Transaction>();
         public ICollection<Budget> Budgets { get; set; } = new HashSet<Budget>();

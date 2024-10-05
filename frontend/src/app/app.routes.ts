@@ -6,10 +6,11 @@ import { DashboardComponent } from './Components/dashboard/dashboard.component';
 import { AuthGuard } from './Guards/auth.guard'; // Import Auth Guard
 
 export const routes: Routes = [
-    {path:'login', component:LoginComponent},
     {path: 'register', component:RegisterComponent},
-    {path: '', redirectTo:'login', pathMatch:'full'}, //Default route
-    {path: 'dashboard',component:DashboardComponent,canActivate:[AuthGuard]}
+    { path: 'login', component: LoginComponent }, // No guard on login
+    { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] }, // Protected route
+    { path: '', redirectTo: '/login', pathMatch: 'full' },
+    { path: '**', redirectTo: '/login' } // Redirect any unknown routes to login
 ];
 
 @NgModule({

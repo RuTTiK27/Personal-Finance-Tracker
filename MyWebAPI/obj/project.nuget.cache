@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "mZpNZBKoa4k=",
+  "dgSpecHash": "VjdxrZEWf24=",
   "success": true,
   "projectFilePath": "C:\\Rutvik\\Personal-Finance-Tracker\\MyWebAPI\\MyWebAPI.csproj",
   "expectedPackageFiles": [
@@ -70,6 +70,7 @@
     "C:\\Users\\rutvi\\.nuget\\packages\\microsoft.win32.registry\\4.5.0\\microsoft.win32.registry.4.5.0.nupkg.sha512",
     "C:\\Users\\rutvi\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "C:\\Users\\rutvi\\.nuget\\packages\\mono.texttemplating\\2.2.1\\mono.texttemplating.2.2.1.nupkg.sha512",
+    "C:\\Users\\rutvi\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\rutvi\\.nuget\\packages\\swashbuckle.aspnetcore\\6.7.3\\swashbuckle.aspnetcore.6.7.3.nupkg.sha512",
     "C:\\Users\\rutvi\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.7.3\\swashbuckle.aspnetcore.swagger.6.7.3.nupkg.sha512",
     "C:\\Users\\rutvi\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.7.3\\swashbuckle.aspnetcore.swaggergen.6.7.3.nupkg.sha512",

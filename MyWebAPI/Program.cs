@@ -3,6 +3,7 @@ using MyWebAPI.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +41,19 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(secretKey)
+        IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+        //ClockSkew = TimeSpan.Zero
+    };
+    // Customize the response for unauthorized access
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            var result = JsonConvert.SerializeObject(new { error = "Unauthorized access." });
+            return context.Response.WriteAsync(result);
+        }
     };
 });
 

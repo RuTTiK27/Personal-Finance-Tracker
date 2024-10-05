@@ -10,23 +10,24 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Mail;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController:ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly MyAppDbContext _context;
 
         private readonly IConfiguration _configuration;
-        public UsersController(MyAppDbContext context,IConfiguration configuration)
+        public UsersController(MyAppDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
         }
         private readonly PasswordHasher<User> _passwordHasher = new PasswordHasher<User>();
-        
+
         // GET: api/users/reservedusernames
         [HttpGet("reservedusernames")]
         [EnableCors("AllowSpecificOrigin")]
@@ -53,7 +54,7 @@ namespace MyWebAPI.Controllers
             return Ok(reservedEmails);
         }
 
-        
+
         //GET: api/users
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
@@ -85,14 +86,14 @@ namespace MyWebAPI.Controllers
             // Generate JWT Token for verification
             var EmailVerificationToken = GenerateJwtToken(user);
             user.EmailVerificationToken = EmailVerificationToken.ToString();
-            
+
             // Send verification email
             await SendVerificationEmail(user.Email, EmailVerificationToken.ToString());
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUser), new {id = user.UserId},user);
+            return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, user);
         }
 
         private bool UserExists(int id)
@@ -102,7 +103,7 @@ namespace MyWebAPI.Controllers
 
         //PUT: api/Users/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id,[FromBody] UserUpdateDto userUpdateDto)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userUpdateDto)
         {
             var user = await _context.Users.FindAsync(id);
 
@@ -124,14 +125,14 @@ namespace MyWebAPI.Controllers
             {
                 user.PasswordHash = userUpdateDto.PasswordHash;
             }
-            
+
             _context.Entry(user).State = EntityState.Modified;
-            
+
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch(DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException)
             {
                 if (!UserExists(id))
                 {
@@ -182,7 +183,7 @@ namespace MyWebAPI.Controllers
                 issuer: jwtSettings.Issuer,
                 audience: jwtSettings.Audience,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(jwtSettings.ExpirationInMinutes),
+                expires: DateTime.UtcNow.AddMinutes(jwtSettings.ExpirationInMinutes),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -261,17 +262,17 @@ namespace MyWebAPI.Controllers
                 return BadRequest("User not found with this credentials.");
             }
 
-            
+
 
             return Ok("Email verified successfully. Visit http://localhost:4200/login");
         }
-        
+
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var user = _context.Users.SingleOrDefault(u => u.Email == request.Email);
             if (user == null)
-                return Unauthorized(new { message = "Invalid email or username" });
+                return Unauthorized(new { message = "Invalid email" });
 
             // Verify password
             var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
@@ -283,13 +284,54 @@ namespace MyWebAPI.Controllers
                 return BadRequest(new { message = "Email not verified" });
 
             // Generate JWT token using the existing method
-            var token = GenerateJwtToken(user);
+            var accessToken = GenerateJwtToken(user);
+            var refreshToken = GenerateRefreshToken();
 
-            return Ok(new { Token = token });
+            // Save Refresh Token and its expiry
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(2); // Refresh token expiry (2 days)
+
+            _context.SaveChanges();
+
+            return Ok(new AuthResponse
+            {
+                accessToken = accessToken,
+                refreshToken = refreshToken
+            });
+        }
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
         }
 
+        [HttpPost("refresh-token")]
+        public IActionResult RefreshToken([FromBody] AuthResponse authResponse)
+        {
+            var user = _context.Users.SingleOrDefault(u => u.RefreshToken == authResponse.refreshToken);
+            if (user == null)
+                return BadRequest();   
+            if(user.RefreshTokenExpiryTime < DateTime.Now)
+                return BadRequest();
 
+            var newJwtToken = GenerateJwtToken(user);
+            var newRefreshToken = GenerateRefreshToken();
 
+            // Save Refresh Token and its expiry
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(2); // Refresh token expiry (2 days)
 
+            _context.SaveChanges();
+
+            return Ok(new
+            {
+                accessToken = newJwtToken,
+                refreshToken = newRefreshToken
+            });
+        }
     }
 }
